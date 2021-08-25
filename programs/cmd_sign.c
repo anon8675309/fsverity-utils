@@ -34,6 +34,7 @@ static const struct option longopts[] = {
 	{"out-descriptor",  required_argument, NULL, OPT_OUT_DESCRIPTOR},
 	{"key",		    required_argument, NULL, OPT_KEY},
 	{"cert",	    required_argument, NULL, OPT_CERT},
+	{"engine",	    required_argument, NULL, OPT_ENGINE},
 	{NULL, 0, NULL, 0}
 };
 
@@ -74,6 +75,13 @@ int fsverity_cmd_sign(const struct fsverity_command *cmd,
 				goto out_usage;
 			}
 			sig_params.certfile = optarg;
+			break;
+		case OPT_ENGINE:
+			if (sig_params.engine != NULL) {
+				error_msg("--engine can only be specified once");
+				goto out_usage;
+			}
+			sig_params.engine = optarg;
 			break;
 		default:
 			goto out_usage;

@@ -84,6 +84,7 @@ struct libfsverity_digest {
 struct libfsverity_signature_params {
 	const char *keyfile;		/* path to key file (PEM format) */
 	const char *certfile;		/* path to certificate (PEM format) */
+	const char *engine;		/* HSM engine */
 	uint64_t reserved1[8];		/* must be 0 */
 	uintptr_t reserved2[8];		/* must be 0 */
 };

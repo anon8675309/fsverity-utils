@@ -61,7 +61,7 @@ static const struct fsverity_command {
 "    fsverity sign FILE OUT_SIGFILE --key=KEYFILE\n"
 "               [--hash-alg=HASH_ALG] [--block-size=BLOCK_SIZE] [--salt=SALT]\n"
 "               [--out-merkle-tree=FILE] [--out-descriptor=FILE]\n"
-"               [--cert=CERTFILE]\n"
+"               [--cert=CERTFILE] [--engine=ENGINE]\n"
 	}
 };
 

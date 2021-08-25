@@ -17,6 +17,7 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/pkcs7.h>
+#include <openssl/engine.h>
 #include <string.h>
 
 static int print_openssl_err_cb(const char *str,
@@ -317,6 +318,27 @@ out:
 
 #endif /* !OPENSSL_IS_BORINGSSL */
 
+
+static void display_engine_list(void)
+{
+	ENGINE *h;
+	int loop;
+	h = ENGINE_get_first();
+	loop = 0;
+	printf("listing available engine types\n");
+	while(h)
+		{
+		printf("engine %i, id = \"%s\", name = \"%s\"\n",
+			loop++, ENGINE_get_id(h), ENGINE_get_name(h));
+		h = ENGINE_get_next(h);
+		}
+	printf("end of list\n");
+	/* ENGINE_get_first() increases the struct_ref counter, so we
+           must call ENGINE_free() to decrease it again */
+	ENGINE_free(h);
+}
+
+
 LIBEXPORT int
 libfsverity_sign_digest(const struct libfsverity_digest *digest,
 			const struct libfsverity_signature_params *sig_params,
@@ -325,6 +347,7 @@ libfsverity_sign_digest(const struct libfsverity_digest *digest,
 	const struct fsverity_hash_alg *hash_alg;
 	EVP_PKEY *pkey = NULL;
 	X509 *cert = NULL;
+	ENGINE *eng = NULL;
 	const EVP_MD *md;
 	struct fsverity_formatted_digest *d = NULL;
 	int err;
@@ -353,7 +376,28 @@ libfsverity_sign_digest(const struct libfsverity_digest *digest,
 		return -EINVAL;
 	}
 
-	err = read_private_key(sig_params->keyfile, &pkey);
+	if (sig_params->engine) {
+		// Engine specified
+		ENGINE_load_dynamic();
+		display_engine_list();
+		eng = ENGINE_by_id(sig_params->engine);
+		if (!eng) {
+			libfsverity_error_msg("failed to load engine %s\n", sig_params->engine);
+			return -EINVAL;
+		} else if (!ENGINE_set_default(eng, ENGINE_METHOD_ALL)) {
+			libfsverity_error_msg("Can't use engine '%s'\n", sig_params->engine);
+			ENGINE_free(eng);
+			return -EINVAL;
+		}
+		err = read_private_key(sig_params->keyfile, &pkey);
+		if (err){
+			ENGINE_free(eng);
+			return -EINVAL;
+		}
+		err = 0;
+	} else {
+		err = read_private_key(sig_params->keyfile, &pkey);
+	}
 	if (err)
 		goto out;
 
